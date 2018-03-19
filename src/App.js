@@ -26,24 +26,24 @@ const particlesOptions = {
   }
 }
 
+const initialState = {
+  input: '',
+  imageURL: '',
+  box: {},
+  route: 'signin',
+  isSignedIn: false,
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
+}
 class App extends Component {
   constructor() {
     super();
-    this.state = {
-      input: '',
-      imageURL: '',
-      box: {},
-      route: 'signin',
-      isSignedIn: false,
-      user: {
-        id: '',
-        name: '',
-        email: '',
-        entries: 0,
-        joined: ''
-
-      }
-    }
+    this.state = initialState;
   }
 
   loadUser = (data) => {
@@ -83,26 +83,27 @@ class App extends Component {
   onButtonSubmit = () => {
     this.setState({imageURL: this.state.input});
     app.models
-      .predict(
-        Clarifai.FACE_DETECT_MODEL, 
-        this.state.input)
-      .then(response => {
-        if (response) {
-          fetch('http://localhost:3000/image', {
-            method: 'put',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              id: this.state.user.id
-            })
+    .predict(
+      Clarifai.FACE_DETECT_MODEL, 
+      this.state.input)
+    .then(response => {
+      if (response) {
+        fetch('http://localhost:3000/image', {
+          method: 'put',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            id: this.state.user.id
           })
-          .then(response => response.json())
-          .then(count => {
-            this.setState(Object.assign(this.state.user, { entries: count}))
-          })
-        }
-        this.displayFaceBox(this.calculateFaceLocation(response));
-      })
-      .catch(err => console.log(err));
+        })
+        .then(response => response.json())
+        .then(count => {
+          this.setState(Object.assign(this.state.user, { entries: count}))
+        })
+        .catch(console.log)
+      }
+      this.displayFaceBox(this.calculateFaceLocation(response));
+    })
+    .catch(err => console.log(err));
   }
   // Had to change to above because the fuction wasn't behaving properly
   //     function(response) {
@@ -119,7 +120,7 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
     }
@@ -130,26 +131,26 @@ class App extends Component {
     const { isSignedIn, imageURL, route, box} = this.state;
     return (
       <div className="App">
-        <Particles className='particles'
-        params={particlesOptions}
-        />
-        <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
-        { this.state.route === 'home' ?
-          <div>
-            <Logo />
-            <Rank name={this.state.user.name} entries={this.state.user.entries} />
-            <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
-            <FaceRecognition box={box} imageURL={imageURL}/>
-          </div>
-          : (
-              route === 'signin' ?
-              <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
-              :
-              <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
-            )
-        }
+      <Particles className='particles'
+      params={particlesOptions}
+      />
+      <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
+      { this.state.route === 'home' ?
+      <div>
+      <Logo />
+      <Rank name={this.state.user.name} entries={this.state.user.entries} />
+      <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
+      <FaceRecognition box={box} imageURL={imageURL}/>
       </div>
-        );
+      : (
+        route === 'signin' ?
+        <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
+        :
+        <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
+        )
+    }
+    </div>
+    );
   }
 }
 
